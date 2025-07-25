@@ -1,4 +1,4 @@
-# Multi-Granular Spatio-Temporal Token Merging for Training-Free Acceleration of Video LLMs
+# Multi-Granular Spatio-Temporal Token Merging for Training-Free Acceleration of Video LLMs (ICCV 2025)
 
 [arXiv](https://arxiv.org/abs/2507.07990) | [Project Page](https://www.jshyun.me/projects/sttm)
 
@@ -12,6 +12,10 @@ STTM is validated using three models: LLaVA-Video-7B/72B, LLaVA-OneVision-7B, an
 * Long videos: Video-MME; LongVideoBench; MLVU
 * Short videos: NExT-QA; EgoSchema
 
+## Update
+* 🗓️ `Coming in August 2025`: Token merging demo code will be released - stay tuned!
+* 🗓️ `July 26, 2025`: Code is now available!
+* 🗓️ `June 26, 2025`: STTM is accepted to ICCV 2025
 
 ## Environment Setup
 
