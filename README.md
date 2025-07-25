@@ -115,11 +115,7 @@ To extract video frames and features, refer to the following script:
 For reproducible results, we provide a `--reproduce` flag that sets a fixed random seed and enables deterministic CUDA operations.
 
 - `scripts/eval/run_vidqa.sh` – Contains example commands for video QA evaluation with reproducibility enabled.
-
-Frame extraction. Please refer to `scripts/eval/run_feat_extr.sh` for the commands.
-
-For getting reproducible result, we support `--reproduce` option which sets fixed random seed and makes deterministic CUDA operation. Please refer to `scripts/eval/run_vidqa.sh` for the commands.
-The basic format is:
+The basic running format is:
 ```bash
 CUDA_VISIBLE_DEVICES=${device} \
 python llava/eval/eval_vidqa_by_feat_{model_name}.py \
