@@ -82,13 +82,15 @@ def quadtree_build_iteration_video(parent_tyx_coords_3d,
 
     return parent_tyx_coords_3d # dividing node coords
 
-def quadtree_build_video(_video_feature, threshold, temporal_thresh=-1.0, root_level=0, weighted_avg=False, slow_ver=False, head_dim=None, pos_embs=None, pos_emb_weighted_avg=False):
+def quadtree_build_video(_video_feature, threshold, temporal_thresh=-1.0, root_level=0, weighted_avg=False, slow_ver=False, head_dim=None, pos_embs=None, pos_emb_weighted_avg=False, get_idx_mapper=False):
     _video_feature_lv0 = _video_feature # [T, C, H, W]
     device = _video_feature_lv0.device
     quadtree_num_patches_per_node = None
+    video_T, video_H, video_W = -1, -1, -1
     pool_to_even_side_feature = sumpool_to_even_side_feature if weighted_avg else avgpool_to_even_side_feature
     cross_frame_node_merging = cross_frame_node_merging_slow if slow_ver else cross_frame_node_merging_fast
     
+    ##### Start: for pos emb merging ablation
     quadtree_pos_embs_cos, quadtree_pos_embs_sin, pos_embs_cos_per_level, pos_embs_sin_per_level = None, None, None, None
     if pos_embs is not None:
         pool_to_even_side_pos_embs = sumpool_to_even_side_pos_embs if pos_emb_weighted_avg else avgpool_to_even_side_pos_embs
@@ -97,6 +99,7 @@ def quadtree_build_video(_video_feature, threshold, temporal_thresh=-1.0, root_l
         pos_embs_sin_per_level = [_pos_embs_sin_lv0]
         _pos_embs_cos_nxt_lvl = _pos_embs_cos_lv0
         _pos_embs_sin_nxt_lvl = _pos_embs_sin_lv0
+    ##### End: for pos emb merging ablation
 
     t, _, h, w = _video_feature.shape
     size_per_level = [(h, w)]
@@ -131,6 +134,8 @@ def quadtree_build_video(_video_feature, threshold, temporal_thresh=-1.0, root_l
     grid_x = torch.arange(0, W, device=device, dtype=torch.int32)
     gt_lv0, gy_lv0, gx_lv0 = torch.meshgrid(grid_t, grid_y, grid_x, indexing='ij') # [T, H, W]
     node_tyxyx_tlbr_lv0 = torch.stack([gt_lv0, gy_lv0, gx_lv0, gy_lv0+1, gx_lv0+1], dim=-1) # [T, H, W, 3]
+    if get_idx_mapper:
+        video_T, video_H, video_W = T, H, W
     
     node_tyxyx_tlbr_nxt_lvl = node_tyxyx_tlbr_lv0
     node_tyxyx_tlbr_per_level = [node_tyxyx_tlbr_nxt_lvl]
@@ -156,7 +161,8 @@ def quadtree_build_video(_video_feature, threshold, temporal_thresh=-1.0, root_l
         
         if temporal_thresh > 0:
             merged_results = cross_frame_node_merging(quadtree_features_video, quadtree_tyxyx_tlbr, temporal_thresh, quadtree_num_patches_per_node, weighted_avg, head_dim,
-                                                                                                                quadtree_pos_embs_cos, quadtree_pos_embs_sin, pos_emb_weighted_avg)
+                                                                                                                quadtree_pos_embs_cos, quadtree_pos_embs_sin, pos_emb_weighted_avg,
+                                                                                                                T=video_T, H=video_H, W=video_W)
             quadtree_features_video, quadtree_num_patches_per_node, quadtree_tyxyx_tlbr = merged_results.get('feature', None), merged_results.get('num_patch', None), merged_results.get('tlbr', None)
             if pos_embs is not None:
                 pos_embs_cos, pos_embs_sin = merged_results.get('pos_embs_cos', None), merged_results.get('pos_embs_sin', None)
@@ -171,7 +177,10 @@ def quadtree_build_video(_video_feature, threshold, temporal_thresh=-1.0, root_l
         if pos_embs is not None:
             return quadtree_features_video, quadtree_num_patches_per_node, quadtree_tyxyx_tlbr, (pos_embs_cos, pos_embs_sin)
         else:
-            return quadtree_features_video, quadtree_num_patches_per_node, quadtree_tyxyx_tlbr
+            if get_idx_mapper:
+                return quadtree_features_video, quadtree_num_patches_per_node, quadtree_tyxyx_tlbr, merged_results.get('thw2final_mapper', None)
+            else:
+                return quadtree_features_video, quadtree_num_patches_per_node, quadtree_tyxyx_tlbr
 
     ## build first level coord
     T, H_lvl0, W_lvl0, _ = video_features_per_level[0].shape
@@ -217,7 +226,8 @@ def quadtree_build_video(_video_feature, threshold, temporal_thresh=-1.0, root_l
     if temporal_thresh > 0:
         merged_results = cross_frame_node_merging(quadtree_features_video, quadtree_tyxyx_tlbr, temporal_thresh, 
                                                                                         quadtree_num_patches_per_node, weighted_avg, head_dim,
-                                                                                        quadtree_pos_embs_cos, quadtree_pos_embs_sin, pos_emb_weighted_avg)
+                                                                                        quadtree_pos_embs_cos, quadtree_pos_embs_sin, pos_emb_weighted_avg,
+                                                                                        T=video_T, H=video_H, W=video_W)
         quadtree_features_video, quadtree_num_patches_per_node, quadtree_tyxyx_tlbr = merged_results.get('feature', None), merged_results.get('num_patch', None), merged_results.get('tlbr', None)
         if pos_embs is not None:
             pos_embs_cos, pos_embs_sin = merged_results.get('pos_embs_cos', None), merged_results.get('pos_embs_sin', None)
@@ -232,7 +242,10 @@ def quadtree_build_video(_video_feature, threshold, temporal_thresh=-1.0, root_l
     if pos_embs is not None:
         return quadtree_features_video, quadtree_num_patches_per_node, quadtree_tyxyx_tlbr, (pos_embs_cos, pos_embs_sin)
     else:
-        return quadtree_features_video, quadtree_num_patches_per_node, quadtree_tyxyx_tlbr
+        if get_idx_mapper:
+            return quadtree_features_video, quadtree_num_patches_per_node, quadtree_tyxyx_tlbr, merged_results.get('thw2final_mapper', None)
+        else:
+            return quadtree_features_video, quadtree_num_patches_per_node, quadtree_tyxyx_tlbr
 
 
 if __name__ == "__main__":

@@ -95,7 +95,7 @@ def Qwen2Model_forward(
             H = int(math.sqrt(num_visual_tokens // T))
             video_features = einops.rearrange(visual_features[0], "(T H W) C -> T C H W", T=T, H=H)
             quadtree_features, _, quadtree_tyxyx_tlbr, node_metadata = get_quadtree_features(video_features, self.sa_tree_thresh, self.sa_tree_temporal_thresh, self.sa_tree_root_level,
-                                                        self.sa_tree_weighted_avg, slow_ver=self.sttm_slow_ver)
+                                                        self.sa_tree_weighted_avg, vis_flag=True, slow_ver=self.sttm_slow_ver)
             
             return node_metadata
             ### end token division with QuadTree algorithm
@@ -190,7 +190,8 @@ def Qwen2ForCausalLM_forward(
         )
         return outputs
 
-def replace_qwen2_with_quadtree_attn_for_vis(sa_start_layer_idx=0, sa_tree_thresh=0.90, sa_tree_temporal_thresh=-1.0, sa_tree_root_level=0, sa_tree_weighted_avg=False, sttm_slow_ver=False):
+def replace_qwen2_with_quadtree_attn_for_vis(sa_start_layer_idx=0, sa_tree_thresh=0.90, sa_tree_temporal_thresh=-1.0, sa_tree_root_level=0,
+                                            sa_tree_weighted_avg=False, sttm_slow_ver=False, **kwargs):
     print("Replace Qwen2 Flash Attention2 by QuadTree Attn For Visualization")
     transformers.models.qwen2.modeling_qwen2.Qwen2Model.sa_start_layer_idx = sa_start_layer_idx
     transformers.models.qwen2.modeling_qwen2.Qwen2Model.sa_tree_thresh = sa_tree_thresh

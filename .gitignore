@@ -79,3 +79,4 @@ visualization/
 vis_*/
 *.png
 sim_results
+visualize_*/

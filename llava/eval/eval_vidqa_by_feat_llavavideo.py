@@ -55,7 +55,7 @@ if torch.cuda.is_available():
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-def setup_llava_video_model(model_args, data_args, eval_args):
+def setup_llava_video_model(model_args, data_args, eval_args, vis_flag=False):
     model_base = model_args.model_base
     model_path = model_args.model_name_or_path
     model_name = "llava_qwen"
@@ -82,6 +82,8 @@ def setup_llava_video_model(model_args, data_args, eval_args):
         output_dir = f"outputs_{dataset_name}/{output_dir}"
     output_dir = os.path.join("outputs_reproduce", output_dir) if eval_args.reproduce else os.path.join("outputs", output_dir)
     # output_dir = os.path.join("outputs_debug", output_dir) if eval_args.reproduce else os.path.join("outputs", output_dir) # use it for debugging time
+    if vis_flag:
+        output_dir = output_dir.replace("outputs", "visualize")
     
     ## set rope_scaling_factor and attn_mode
     overwrite_config = None

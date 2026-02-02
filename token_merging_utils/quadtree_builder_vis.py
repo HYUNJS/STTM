@@ -119,6 +119,7 @@ if __name__ == "__main__":
     
     # _video_feature = torch.rand((60, 24*24, 256))
     _video_feature = _video_feature.to("cuda")
+    # _video_feature = _video_feature.to("cuda:7")
 
     T, HW, D = _video_feature.shape
     H = int(math.sqrt(HW))
@@ -129,6 +130,6 @@ if __name__ == "__main__":
     _video_feature = _video_feature.view(T, H, W, -1).permute(0, 3, 1, 2).contiguous() # [T C H W] 27x27
     _video_feature = F.interpolate(_video_feature, scaled_shape) # 14x14
     
-    quadtree_features_video_2 = quadtree_build_video_visualization(_video_feature, threshold=0.80, temporal_thresh=0.60, root_level=1)
+    quadtree_features_video, quadtree_num_patches_per_node, quadtree_tyxyx_tlbr, node_metadata = quadtree_build_video_vis(_video_feature, threshold=0.80, temporal_thresh=0.60, root_level=1)
     _video_feature
     

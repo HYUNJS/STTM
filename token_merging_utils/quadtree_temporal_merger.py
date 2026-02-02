@@ -270,7 +270,9 @@ def get_merge_dst_idx_safe(pair_idxs_for_merging, N_node):
 
 def cross_frame_node_merging_fast(quadtree_features_video, quadtree_tyxyx_tlbr, temporal_thresh, 
                                 quadtree_num_patches_per_node, weighted_avg=False, head_dim=None,
-                                quadtree_pos_embs_cos=None, quadtree_pos_embs_sin=None, pos_emb_weighted_avg=False):
+                                quadtree_pos_embs_cos=None, quadtree_pos_embs_sin=None, pos_emb_weighted_avg=False,
+                                T=-1, H=-1, W=-1):
+                                # quadtree_pos_embs_cos=None, quadtree_pos_embs_sin=None, pos_emb_weighted_avg=False):
     """
         Merge the consecutive frames' tokens within the same spatial layout and showing high similarity
         quadtree_features_video: [N, C]
@@ -284,7 +286,15 @@ def cross_frame_node_merging_fast(quadtree_features_video, quadtree_tyxyx_tlbr, 
     merged_results = agg_feature_and_metadata(quadtree_features_video, quadtree_num_patches_per_node, quadtree_tyxyx_tlbr, 
                                             final_representative, weighted_avg, quadtree_pos_embs_cos, quadtree_pos_embs_sin, pos_emb_weighted_avg)
     
+    ##### start (tmp)
+    if T != -1 and H != -1 and W != -1:
+        device = quadtree_tyxyx_tlbr.device
+        thw2final_mapper = get_final_merged_token_indices_parallel(quadtree_tyxyx_tlbr, final_representative, T, H, W, device)
+        merged_results['thw2final_mapper'] = thw2final_mapper
+    ##### end
+    
     return merged_results
+    
 
 def cross_frame_node_merging_slow(quadtree_features_video, quadtree_tyxyx_tlbr, temporal_thresh, 
                                 quadtree_num_patches_per_node, weighted_avg=False, head_dim=None,
@@ -318,7 +328,87 @@ def cross_frame_node_merging_vis(quadtree_features_video, quadtree_tyxyx_tlbr, t
         node_metadata[int(node_id.item())] = quadtree_tyxyx_tlbr[mask].tolist()
     
     return merged_results, node_metadata
+
+def get_final_merged_token_indices_parallel(
+    quadtree_tyxyx_tlbr,
+    final_representative,
+    T, H, W,
+    device
+):
+    """
+    Get the index of each original token corresponding to the final merged token index
+    after both spatial and temporal merging. This version is parallelized.
+
+    Args:
+        quadtree_tyxyx_tlbr (torch.Tensor): Tensor of shape [N, 5] from spatial merging.
+        final_representative (torch.Tensor): Tensor of shape [N] from temporal merging.
+        T (int): Original number of frames.
+        H (int): Original height of the feature map.
+        W (int): Original width of the feature map.
+        device (torch.device): The device to create tensors on.
+
+    Returns:
+        torch.Tensor: A tensor of shape [T*H*W] where each element is the
+                      final merged token index.
+    """
+    # 1. Map original tokens to spatially merged token indices (Parallelized)
+    num_spatial_tokens = quadtree_tyxyx_tlbr.shape[0]
+
+    # # Create coordinate grids
+    # t_coords = torch.arange(T, device=device, dtype=torch.int32).view(T, 1, 1)
+    # y_coords = torch.arange(H, device=device, dtype=torch.int32).view(1, H, 1)
+    # x_coords = torch.arange(W, device=device, dtype=torch.int32).view(1, 1, W)
+
+    # # Expand quadtree_tyxyx_tlbr for broadcasting
+    # # Shape: [N, 5, 1, 1, 1]
+    # qt_br = quadtree_tyxyx_tlbr.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
     
+    # # Create masks for each spatial token
+    # # Shape: [N, T, H, W]
+    # mask = (t_coords == qt_br[:, 0]) & \
+    #         (y_coords >= qt_br[:, 1]) & (y_coords < qt_br[:, 3]) & \
+    #         (x_coords >= qt_br[:, 2]) & (x_coords < qt_br[:, 4])
+
+    # # Create a tensor with the indices to assign
+    # # Shape: [N, 1, 1, 1]
+    # indices_to_assign = torch.arange(num_spatial_tokens, device=device, dtype=torch.int32).view(-1, 1, 1, 1)
+
+    # # Use the mask to create the spatial_merged_indices tensor
+    # # We use a trick: mask * indices gives 0 for False, index for True.
+    # # Summing over the N dimension will work because masks are non-overlapping.
+    # # we assume there is no token without assignment
+    # spatial_merged_indices = (mask * indices_to_assign).sum(dim=0)
+    # spatial_merged_indices_flat = spatial_merged_indices.flatten()
+
+    spatial_mapper = torch.zeros(T, H, W, dtype=torch.int32, device=device)
+
+    for i in range(len(quadtree_tyxyx_tlbr)):
+        t, y0, x0, y1, x1 = quadtree_tyxyx_tlbr[i].tolist()
+        spatial_mapper[t, y0:y1, x0:x1] = i
+    _spatial_mapper = spatial_mapper.reshape(-1)
+
+    # 2. Map spatially merged indices to final temporally merged indices
+    reps_sorted, s2final = torch.unique(final_representative, sorted=True, return_inverse=True)
+    # s2final: [N_spatial]
+    # reps_sorted: [N_temporal]
+    
+    # thw2final_mapper = s2final[spatial_merged_indices_flat].to(torch.long)
+    thw2final_mapper = s2final[_spatial_mapper].to(torch.long)
+
+    return thw2final_mapper
+
+# spatial_mapper = torch.zeros(T, H, W, dtype=torch.int32, device=device)
+
+# for i in range(len(quadtree_tyxyx_tlbr)):
+#     t, y0, x0, y1, x1 = quadtree_tyxyx_tlbr[i].tolist()
+#     spatial_mapper[t, y0:y1, x0:x1] = i
+# # _spatial_mapper = spatial_mapper.reshape(-1)
+
+# for i in range(T):
+#     frame_nodes = (quadtree_tyxyx_tlbr[:, 0] == i).nonzero(as_tuple=False).flatten()
+
+# s2final[_spatial_mapper]
+
 
 if __name__ == "__main__":
     quadtree_features_video = torch.load("quadtree_features_video.pt")

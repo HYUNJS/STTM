@@ -12,7 +12,10 @@ from llava.eval.metric_nextqa import evaluate as evaluate_nextqa
 from llava.eval.metric_mlvu_mcq import evaluate as evaluate_mlvu_mcq
 
 from llava.utils import rank0_print
-from token_merging_utils.monkey_patch_interface import replace_qwen2_by_sparse_attn
+try:
+    from token_merging_utils.monkey_patch_interface import replace_qwen2_by_sparse_attn
+except:
+    print("Fail to import token_merging_utils.monkey_patch_interface")
 
 
 @dataclass

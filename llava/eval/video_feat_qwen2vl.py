@@ -13,7 +13,8 @@ project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 ## Add the project directory to sys.path
 sys.path.append(project_dir)
 
-from llava.train.train import ModelArguments, DataArguments
+# from llava.train.train import ModelArguments, DataArguments
+from llava.utils import ModelArguments, DataArguments
 from llava.eval.eval_utils import EvalArguments, get_data_path
 from llava.eval.video_dataset import Video_Loader_Qwen2VL
 from llava.model.qwen2vl.modeling_qwen2vl import Qwen2VLForConditionalGeneration

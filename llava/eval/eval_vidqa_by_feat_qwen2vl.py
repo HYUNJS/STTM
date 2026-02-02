@@ -54,6 +54,58 @@ if torch.cuda.is_available():
     torch.cuda.manual_seed_all(seed)
 
 
+def setup_qwen2vl_model(model_args, data_args, eval_args, vis_flag=False):
+    model_base = model_args.model_base
+    model_path = model_args.model_name_or_path
+    ckpt_name = model_path.split("/")[1].lower()
+    max_num_frames = data_args.frames_upbound
+    tgt_video_fps = data_args.tgt_video_fps
+    repeat_idx = eval_args.repeat_idx
+    
+    dataset_name = eval_args.dataset_name
+    anno_filepath, video_root, dataset_dir = get_data_path(dataset_name)
+    
+    ## setup dataset root dir
+    data_root = ckpt_name if model_base is None else model_base.split("/")[1].lower()
+    data_root = os.path.join(f"datasets/{dataset_dir}/preprocess_data", data_root, f"F-{max_num_frames}_fps-{tgt_video_fps}")
+    
+    ## set output_dir
+    output_dir = parse_sa_cfg(model_args)
+    if repeat_idx > 0:
+        output_dir = f"outputs_{dataset_name}_repeat-{repeat_idx}/{output_dir}"
+    else:
+        output_dir = f"outputs_{dataset_name}/{output_dir}"
+    output_dir = os.path.join("outputs_reproduce", output_dir) if eval_args.reproduce else os.path.join("outputs", output_dir)
+    # output_dir = os.path.join("outputs_debug", output_dir) if eval_args.reproduce else os.path.join("outputs", output_dir) # use it for debugging time
+
+    if vis_flag:
+        output_dir = output_dir.replace("outputs", "visualize")
+
+    ## load pretrained weight and processor
+    model = Qwen2VLForConditionalGeneration.from_pretrained(model_path, torch_dtype=torch.bfloat16, attn_implementation="flash_attention_2", device_map="auto")
+    processor = Qwen2VLProcessor.from_pretrained(model_path)
+    data_args.processor = processor
+    
+    ## apply monkey patch
+    if model_args.sa_pattern == "framefusion":
+        # llava-based: cost = 0.3, similarity_lower_bound = 0.6, ratio_lower_bound = 0.1
+        model = apply_framefusion(model, cost=model_args.sa_framefusion_cost, similarity_lower_bound=0.6, ratio_lower_bound=0.1)
+    elif model_args.sa_pattern == "fastv":
+        replace_Qwen2VL_fastv(model, fastv_k=model_args.sa_start_layer_idx, fastv_r=model_args.sa_fastv_evict_ratio)
+    elif model_args.sa_pattern == "framefusion-merge":
+        sparsity = [0.0] * 28
+        sparsity[model_args.sa_start_layer_idx] = model_args.sa_prune_ratio
+        replace_Qwen2VL_merging(model, sparsity=sparsity)
+    elif model_args.sa_pattern == "streamingllm":
+        replace_Qwen2VL_streamingllm(model, init_num=model_args.sa_asa_n_init, length_rate=model_args.sa_asa_n_ratio)
+    
+    ## create answer file
+    pred_filepath = f"{output_dir}/{ckpt_name}_F-{max_num_frames}_fps-{tgt_video_fps}.json"
+    # pred_filepath = "output/tmp.json"
+    os.makedirs(os.path.dirname(pred_filepath), exist_ok=True)
+    
+    return model, processor, data_root, pred_filepath
+
 if __name__ == "__main__":   
     parser = transformers.HfArgumentParser((ModelArguments, DataArguments, EvalArguments))
     model_args, data_args, eval_args = parser.parse_args_into_dataclasses()
@@ -67,56 +119,17 @@ if __name__ == "__main__":
         "use_cache": True,
         "num_logits_to_keep": 1,
     }
-    
-    model_base = model_args.model_base
-    model_path = model_args.model_name_or_path
-    ckpt_name = model_path.split("/")[1].lower()
-    max_num_frames = data_args.frames_upbound
-    tgt_video_fps = data_args.tgt_video_fps
-    repeat_idx = eval_args.repeat_idx
-    
+
+    ## setup data path and evaluator
     dataset_name = eval_args.dataset_name
     anno_filepath, video_root, dataset_dir = get_data_path(dataset_name)
     evaluate = get_evaluator(dataset_dir)
-    data_root = ckpt_name if model_base is None else model_base.split("/")[1].lower()
-    data_root = os.path.join(f"datasets/{dataset_dir}/preprocess_data", data_root, f"F-{max_num_frames}_fps-{tgt_video_fps}")
-    
-    ## set output_dir
-    output_dir = parse_sa_cfg(model_args)
-    if repeat_idx > 0:
-        output_dir = f"outputs_{dataset_name}_repeat-{repeat_idx}/{output_dir}"
-    else:
-        output_dir = f"outputs_{dataset_name}/{output_dir}"
-    # output_dir = "outputs_debug"
 
-    if eval_args.reproduce:
-        output_dir = os.path.join("outputs_reproduce", output_dir)
-    else:
-        output_dir = os.path.join("outputs", output_dir)
-
-    model = Qwen2VLForConditionalGeneration.from_pretrained(model_path, torch_dtype=torch.bfloat16, attn_implementation="flash_attention_2", device_map="auto")
-    processor = Qwen2VLProcessor.from_pretrained(model_path)
-    data_args.processor = processor
+    ## setup model
+    model, processor, data_root, pred_filepath = setup_qwen2vl_model(model_args, data_args, eval_args)
+    model.eval()
     
-    if model_args.sa_pattern == "framefusion":
-        # llava-based: cost = 0.3, similarity_lower_bound = 0.6, ratio_lower_bound = 0.1
-        model = apply_framefusion(model, cost=model_args.sa_framefusion_cost, similarity_lower_bound=0.6, ratio_lower_bound=0.1)
-    elif model_args.sa_pattern == "fastv":
-        replace_Qwen2VL_fastv(model, fastv_k=model_args.sa_start_layer_idx, fastv_r=model_args.sa_fastv_evict_ratio)
-    elif model_args.sa_pattern == "framefusion-merge":
-        sparsity = [0.0] * 28
-        sparsity[model_args.sa_start_layer_idx] = model_args.sa_prune_ratio
-        replace_Qwen2VL_merging(model, sparsity=sparsity)
-    elif model_args.sa_pattern == "streamingllm":
-        replace_Qwen2VL_streamingllm(model, init_num=model_args.sa_asa_n_init, length_rate=model_args.sa_asa_n_ratio)
-    
-
-
-    # Create answer file
-    pred_filepath = f"{output_dir}/{ckpt_name}_F-{max_num_frames}_fps-{tgt_video_fps}.json"
-    # pred_filepath = "output/tmp.json"
-    os.makedirs(os.path.dirname(pred_filepath), exist_ok=True)
-    
+    ## create recording file pointers
     pred_filepath_tmp = pred_filepath.replace(".json", "_tmp.json")
     prev_pred_qids = None
     if os.path.exists(pred_filepath_tmp):
@@ -144,8 +157,7 @@ if __name__ == "__main__":
     ## build dataset and dataloader
     vidqa_feature_dataset = VidQA_Loader_Feature_Qwen2VL(dataset_name, anno_filepath, data_root, data_args, answer_flag=True, prev_pred_qids=prev_pred_qids, first_sample=False)
     vidqa_feature_dataloader = DataLoader(vidqa_feature_dataset, batch_size=1, shuffle=False, num_workers=8, prefetch_factor=3)
-    model.eval()
-
+    
     ## run MLLM and save results
     for idx, d in enumerate(tqdm(vidqa_feature_dataloader)):        
         input_ids = d['input_ids'][0].unsqueeze(0).to("cuda")

@@ -52,39 +52,40 @@ dycoke_stage1_cfg_2_25="--sa_pattern dycoke-stage1 --sa_start_layer_idx 2 --sa_p
 
 ##### Start: STTM token reduction method
 sttm_common_cfg="--sa_pattern quadtree --sa_start_layer_idx 2 --sa_tree_root_level 1 "
+sttm_common_vis_cfg="--sa_pattern quadtree_vis --sa_start_layer_idx 2 --sa_tree_root_level 1 "
 ## llava-video-qwen2-7b-video-only
-sttm_cfg_50_vnb_llavavideo_7b="${sttm_common_cfg} --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.65"
-sttm_cfg_30_vnb_llavavideo_7b="${sttm_common_cfg} --sa_tree_thresh 0.80 --sa_tree_temporal_thresh 0.60"
-sttm_cfg_50_vmme_llavavideo_7b="${sttm_common_cfg} --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.55"
-sttm_cfg_30_vmme_llavavideo_7b="${sttm_common_cfg} --sa_tree_thresh 0.80 --sa_tree_temporal_thresh 0.50"
-sttm_cfg_50_egos_llavavideo_7b="${sttm_common_cfg} --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.55"
-sttm_cfg_30_egos_llavavideo_7b="${sttm_common_cfg} --sa_tree_thresh 0.80 --sa_tree_temporal_thresh 0.60"
-sttm_cfg_50_next_llavavideo_7b="${sttm_common_cfg} --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.65"
-sttm_cfg_30_next_llavavideo_7b="${sttm_common_cfg} --sa_tree_thresh 0.80 --sa_tree_temporal_thresh 0.65"
-sttm_cfg_50_lvb_llavavideo_7b="${sttm_common_cfg} --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.60"
-sttm_cfg_30_lvb_llavavideo_7b="${sttm_common_cfg} --sa_tree_thresh 0.80 --sa_tree_temporal_thresh 0.55"
-sttm_cfg_50_mlvu_llavavideo_7b="${sttm_common_cfg} --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.55"
-sttm_cfg_30_mlvu_llavavideo_7b="${sttm_common_cfg} --sa_tree_thresh 0.80 --sa_tree_temporal_thresh 0.55"
+sttm_cfg_50_vnb_llavavideo_7b=" --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.65"
+sttm_cfg_30_vnb_llavavideo_7b=" --sa_tree_thresh 0.80 --sa_tree_temporal_thresh 0.60"
+sttm_cfg_50_vmme_llavavideo_7b=" --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.55"
+sttm_cfg_30_vmme_llavavideo_7b=" --sa_tree_thresh 0.80 --sa_tree_temporal_thresh 0.50"
+sttm_cfg_50_egos_llavavideo_7b=" --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.55"
+sttm_cfg_30_egos_llavavideo_7b=" --sa_tree_thresh 0.80 --sa_tree_temporal_thresh 0.60"
+sttm_cfg_50_next_llavavideo_7b=" --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.65"
+sttm_cfg_30_next_llavavideo_7b=" --sa_tree_thresh 0.80 --sa_tree_temporal_thresh 0.65"
+sttm_cfg_50_lvb_llavavideo_7b=" --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.60"
+sttm_cfg_30_lvb_llavavideo_7b=" --sa_tree_thresh 0.80 --sa_tree_temporal_thresh 0.55"
+sttm_cfg_50_mlvu_llavavideo_7b=" --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.55"
+sttm_cfg_30_mlvu_llavavideo_7b=" --sa_tree_thresh 0.80 --sa_tree_temporal_thresh 0.55"
 ## llava-onevision-7b
-sttm_cfg_50_vnb_llavaov_7b="${sttm_common_cfg} --sa_tree_thresh 0.90 --sa_tree_temporal_thresh 0.65"
-sttm_cfg_30_vnb_llavaov_7b="${sttm_common_cfg} --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.65"
-sttm_cfg_50_vmme_llavaov_7b="${sttm_common_cfg} --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.65"
-sttm_cfg_30_vmme_llavaov_7b="${sttm_common_cfg} --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.55"
-sttm_cfg_50_egos_llavaov_7b="${sttm_common_cfg} --sa_tree_thresh 0.90 --sa_tree_temporal_thresh 0.60"
-sttm_cfg_30_egos_llavaov_7b="${sttm_common_cfg} --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.60"
-sttm_cfg_50_next_llavaov_7b="${sttm_common_cfg} --sa_tree_thresh 0.95 --sa_tree_temporal_thresh 0.65"
-sttm_cfg_30_next_llavaov_7b="${sttm_common_cfg} --sa_tree_thresh 0.90 --sa_tree_temporal_thresh 0.60"
-sttm_cfg_50_lvb_llavaov_7b="${sttm_common_cfg} --sa_tree_thresh 0.90 --sa_tree_temporal_thresh 0.60"
-sttm_cfg_30_lvb_llavaov_7b="${sttm_common_cfg} --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.60"
-sttm_cfg_50_mlvu_llavaov_7b="${sttm_common_cfg} --sa_tree_thresh 0.90 --sa_tree_temporal_thresh 0.55"
-sttm_cfg_30_mlvu_llavaov_7b="${sttm_common_cfg} --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.60"
+sttm_cfg_50_vnb_llavaov_7b=" --sa_tree_thresh 0.90 --sa_tree_temporal_thresh 0.65"
+sttm_cfg_30_vnb_llavaov_7b=" --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.65"
+sttm_cfg_50_vmme_llavaov_7b=" --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.65"
+sttm_cfg_30_vmme_llavaov_7b=" --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.55"
+sttm_cfg_50_egos_llavaov_7b=" --sa_tree_thresh 0.90 --sa_tree_temporal_thresh 0.60"
+sttm_cfg_30_egos_llavaov_7b=" --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.60"
+sttm_cfg_50_next_llavaov_7b=" --sa_tree_thresh 0.95 --sa_tree_temporal_thresh 0.65"
+sttm_cfg_30_next_llavaov_7b=" --sa_tree_thresh 0.90 --sa_tree_temporal_thresh 0.60"
+sttm_cfg_50_lvb_llavaov_7b=" --sa_tree_thresh 0.90 --sa_tree_temporal_thresh 0.60"
+sttm_cfg_30_lvb_llavaov_7b=" --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.60"
+sttm_cfg_50_mlvu_llavaov_7b=" --sa_tree_thresh 0.90 --sa_tree_temporal_thresh 0.55"
+sttm_cfg_30_mlvu_llavaov_7b=" --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.60"
 ## qwen2vl-7b
-sttm_cfg_50_vnb_qwen2vl_7b="${sttm_common_cfg} --sa_tree_thresh 0.80 --sa_tree_temporal_thresh 0.65"
-sttm_cfg_30_vnb_qwen2vl_7b="${sttm_common_cfg} --sa_tree_thresh 0.75 --sa_tree_temporal_thresh 0.50"
-sttm_cfg_50_vmme_qwen2vl_7b="${sttm_common_cfg} --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.60"
-sttm_cfg_30_vmme_qwen2vl_7b="${sttm_common_cfg} --sa_tree_thresh 0.80 --sa_tree_temporal_thresh 0.60"
-sttm_cfg_50_lvb_qwen2vl_7b="${sttm_common_cfg} --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.65"
-sttm_cfg_30_lvb_qwen2vl_7b="${sttm_common_cfg} --sa_tree_thresh 0.80 --sa_tree_temporal_thresh 0.60"
+sttm_cfg_50_vnb_qwen2vl_7b=" --sa_tree_thresh 0.80 --sa_tree_temporal_thresh 0.65"
+sttm_cfg_30_vnb_qwen2vl_7b=" --sa_tree_thresh 0.75 --sa_tree_temporal_thresh 0.50"
+sttm_cfg_50_vmme_qwen2vl_7b=" --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.60"
+sttm_cfg_30_vmme_qwen2vl_7b=" --sa_tree_thresh 0.80 --sa_tree_temporal_thresh 0.60"
+sttm_cfg_50_lvb_qwen2vl_7b=" --sa_tree_thresh 0.85 --sa_tree_temporal_thresh 0.65"
+sttm_cfg_30_lvb_qwen2vl_7b=" --sa_tree_thresh 0.80 --sa_tree_temporal_thresh 0.60"
 ## llava-video-qwen2-72b
 sttm_cfg_50_vmme_llavavideo_72b="--sa_pattern quadtree --sa_start_layer_idx 0 --sa_tree_root_level 1 --sa_tree_thresh 0.94 --sa_tree_temporal_thresh 0.82"
 sttm_cfg_30_vmme_llavavideo_72b="--sa_pattern quadtree --sa_start_layer_idx 0 --sa_tree_root_level 1 --sa_tree_thresh 0.90 --sa_tree_temporal_thresh 0.90"
@@ -97,5 +98,8 @@ script_qwen2vl="python llava/eval/eval_vidqa_by_feat_qwen2vl.py "
 ## python llava/eval/eval_vidqa_by_feat.py --reproduce ${<data_loader_cfg>} ${llava_video_only_7b_with_grid} ${<token_reduction_cfg>}
 
 # example for running llava-video-7b & vnbench & STTM & 50 percent token reduction
-device=0
-CUDA_VISIBLE_DEVICES=${device} ${script_llava} --reproduce ${vnb_f180_cfg} ${model_path_llava_video_only_7b} ${sttm_cfg_50_vnb_llavavideo_7b}
+# device=0
+# CUDA_VISIBLE_DEVICES=${device} ${script_llava} --reproduce ${vnb_f180_cfg} ${model_path_llava_video_only_7b} ${sttm_cfg_50_vnb_llavavideo_7b}
+
+##### Visualization
+CUDA_VISIBLE_DEVICES=7 python llava/eval/vis_by_feat_llavavideo.py --reproduce ${vmme_f128_cfg} ${llava_video_7b} ${sttm_common_cfg} ${sttm_cfg_30_vnb_llavavideo_7b}

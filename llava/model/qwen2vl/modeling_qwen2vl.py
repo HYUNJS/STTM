@@ -21,7 +21,7 @@
 
 import math
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, Callable
 import time
 
 import torch
@@ -2039,3 +2039,34 @@ class Qwen2VLForConditionalGeneration(Qwen2VLPreTrainedModel, GenerationMixin):
                 ), runtime_dict
         else:
             return input_ids, runtime_dict
+    
+    # @torch.no_grad()
+    # def generate(
+    #     self,
+    #     inputs: Optional[torch.Tensor] = None,
+    #     generation_config: Optional[GenerationConfig] = None,
+    #     logits_processor: Optional[LogitsProcessorList] = None,
+    #     stopping_criteria: Optional[StoppingCriteriaList] = None,
+    #     prefix_allowed_tokens_fn: Optional[Callable[[int, torch.Tensor], List[int]]] = None,
+    #     synced_gpus: Optional[bool] = None,
+    #     assistant_model: Optional["PreTrainedModel"] = None,
+    #     streamer: Optional["BaseStreamer"] = None,
+    #     negative_prompt_ids: Optional[torch.Tensor] = None,
+    #     negative_prompt_attention_mask: Optional[torch.Tensor] = None,
+    #     prompt_stat: Optional[Dict[str, int]] = None,
+    #     vis_flag: Optional[bool] = False,
+    #     **kwargs,
+    # ) -> Union[GenerateOutput, torch.LongTensor]:
+    #     if vis_flag:
+    #         model_inputs = self.prepare_inputs_for_generation(input_ids, **model_kwargs)
+
+    #         # prepare variable output controls (note: some models won't accept all output controls)
+    #         model_inputs.update({"output_attentions": output_attentions} if output_attentions else {})
+    #         model_inputs.update({"output_hidden_states": output_hidden_states} if output_hidden_states else {})
+
+    #         # forward pass to get next token
+    #         torch.cuda.synchronize()
+    #         start_time = time.time()
+    #         outputs = self(**model_inputs, return_dict=True)
+    #     else:
+    #         return super().generate

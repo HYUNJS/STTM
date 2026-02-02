@@ -1,4 +1,5 @@
 import gc
+import re
 import os
 import sys
 import copy
@@ -20,9 +21,9 @@ project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 ## Add the project directory to sys.path
 sys.path.append(project_dir)
 
-from llava.utils import rank0_print, process_video_with_decord
+from llava.utils import rank0_print, process_video_with_decord, DataArguments
 from llava.mm_utils import tokenizer_image_token
-from llava.train.train import DataArguments
+# from llava.train.train import DataArguments
 from llava.constants import DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX
 from llava.eval.eval_utils import (read_json, get_prompt_stat,
                                 format_videomme, format_vnbench, format_lvb, format_egoschema, format_nextqa_mcq, format_mlvu_mcq)
@@ -498,6 +499,114 @@ class VidQA_Loader_Feature_Qwen2VL(Dataset):
         ## formating into dict
         data_dict = {"input_ids": input_ids, "attention_mask": attention_mask, 
                     "feature": video_feature, "video_grid_thw": video_grid_thw, "video_sample_fps": video_sample_fps}
+        data_dict["id"] = qid
+        data_dict["vid"] = vid
+        data_dict["sys_len"] = prompt_length['sys']
+        data_dict["inst_len"] = prompt_length['inst']
+        data_dict["frame_len"] = len(video_feature)
+        data_dict["answer"] = str(data['answer']) if self.answer_flag else ""
+        data_dict["instruction"] = conversations
+
+        return data_dict
+    
+class VidQA_Loader_Feature_Gemma3(Dataset):
+    def __init__(self, dataset_name: str, anno_filepath: str, data_root: str, data_args: DataArguments, newline_flag: bool,
+            answer_flag: bool = False, prev_pred_qids=None, first_sample=False):
+        
+        self.dataset_name = dataset_name
+        self.feature_dir = os.path.join(data_root, "features")
+        self.metadata_dir = os.path.join(data_root, "metadata")
+        self.data_args = data_args
+        self.answer_flag = answer_flag
+        self.newline_flag = newline_flag
+        data_list = read_json(anno_filepath) # suppose anno_filepath in jsonl format     
+
+        if len(data_list) == 0:
+            self.data_list = []
+        else:
+            self.data_list = self.format_data(data_list)
+
+        if first_sample: # for debugging purpose
+            self.data_list = [self.data_list[0]]
+        
+        if prev_pred_qids is not None:
+            new_data_list = []
+            for d in self.data_list:
+                if d['qid'] not in prev_pred_qids:
+                    new_data_list.append(d)
+        
+            self.data_list = new_data_list
+        rank0_print(f"Loading {anno_filepath}... {len(self.data_list)} samples ")
+
+    def format_data(self, data_list):
+        if self.dataset_name == "videomme":
+            return format_videomme(data_list, self.answer_flag)
+        elif self.dataset_name == "vnbench":
+            return format_vnbench(data_list, self.answer_flag)
+        elif self.dataset_name == "vnbench_short":
+            return format_vnbench(data_list, self.answer_flag)
+        elif self.dataset_name == "egoschema":
+            return format_egoschema(data_list, self.answer_flag)
+        elif self.dataset_name == "lvb-val":
+            return format_lvb(data_list, self.answer_flag)
+        elif self.dataset_name == "lvb-test":
+            return format_lvb(data_list, self.answer_flag)
+        elif self.dataset_name == "nextqa-mcq":
+            return format_nextqa_mcq(data_list, self.answer_flag)
+        elif self.dataset_name == "mlvu-mcq":
+            return format_mlvu_mcq(data_list, self.answer_flag)
+        else:
+            raise NotImplementedError(f"{self.dataset_name} Formating for VideoQAEvalLoader is not yet implemented")
+    
+    def __len__(self):
+        return len(self.data_list)
+    
+    def __getitem__(self, idx):
+        data = self.data_list[idx]
+        qid = data['qid']
+        vid = data['vid']
+        conversations = copy.deepcopy(data['conversations'])
+        
+        ## read preprocessed data
+        feature_filepath = os.path.join(self.feature_dir, f"{vid}.pt")
+        metadata_filepath = os.path.join(self.metadata_dir, f"{vid}.pkl")
+
+        with open(metadata_filepath, "rb") as fp:
+            metadata = pickle.load(fp)
+        frame_time = metadata['frame_time']
+
+        video_feature = torch.load(feature_filepath, weights_only=True)
+
+        ## tokenizing instruction
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    *[{"type": "image", "image": feature_filepath} for _ in range(len(video_feature))],
+                    {"type": "text", "text": conversations},
+                ],
+            }
+        ]
+
+        text = [self.data_args.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)]
+
+        if self.newline_flag:
+            full_image_sequence = self.data_args.processor.full_image_sequence
+        else:
+            image_tokens_expanded = "".join([self.data_args.processor.image_token] * self.data_args.processor.image_seq_length)
+            full_image_sequence = image_tokens_expanded
+        
+        # image_indexes = [m.start() for m in re.finditer(self.data_args.processor.boi_token, text[0])]
+        text = [prompt.replace(self.data_args.processor.boi_token, full_image_sequence) for prompt in text]
+        text_inputs = self.data_args.processor.tokenizer(text=text, return_tensors="pt")
+        input_ids = text_inputs['input_ids'][0]
+        attention_mask = text_inputs['attention_mask'][0]
+
+        video_token_id = self.data_args.processor.tokenizer.image_token_id
+        prompt_length = get_prompt_stat(input_ids, video_token_id)
+
+        ## formating into dict
+        data_dict = {"input_ids": input_ids, "attention_mask": attention_mask, "feature": video_feature}
         data_dict["id"] = qid
         data_dict["vid"] = vid
         data_dict["sys_len"] = prompt_length['sys']

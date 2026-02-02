@@ -1,0 +1,6 @@
+vmme_f256_fps2_cfg="--dataset_name videomme --frames_upbound 256 --tgt_video_fps 2 "
+vnb_f360_fps2_cfg="--dataset_name vnbench --frames_upbound 360 --tgt_video_fps 2 "
+egos_f256_fps2_cfg="--dataset_name egoschema --frames_upbound 256 --tgt_video_fps 2 "
+lvb_f256_fps2_cfg="--dataset_name lvb-val --frames_upbound 256 --tgt_video_fps 2 "
+nextqa_f256_fps2_cfg="--dataset_name nextqa-mcq --frames_upbound 256 --tgt_video_fps 2 "
+mlvu_f256_fps2_cfg="--dataset_name mlvu-mcq --frames_upbound 256 --tgt_video_fps 2 "

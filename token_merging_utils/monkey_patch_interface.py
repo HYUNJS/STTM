@@ -10,14 +10,19 @@ from token_merging_monkey_patch.dycoke_stage1_attn_monkey_patch import replace_q
 
 ## for qwen2vl
 from token_merging_qwen2vl_monkey_patch.quadtree_attn_monkey_patch import replace_qwen2vl_with_quadtree_attn
+from token_merging_qwen2vl_monkey_patch.quadtree_attn_monkey_patch_for_vis import replace_qwen2vl_with_quadtree_attn_for_vis
 from token_merging_qwen2vl_monkey_patch.tome_attn_monkey_patch import replace_qwen2vl_with_tome_attn
 from token_merging_qwen2vl_monkey_patch.dycoke_stage1_attn_monkey_patch import replace_qwen2vl_with_dycoke_stage1_attn
+
+from token_merging_qwen2vl_monkey_patch.quadtree_residual_attn_monkey_patch import replace_qwen2vl_with_quadtree_residual_attn
 
 
 def replace_qwen2_by_sparse_attn(pattern_name, **kwargs):
     if pattern_name == "quadtree":
         replace_qwen2_with_quadtree_attn(**kwargs)
         replace_qwen2vl_with_quadtree_attn(**kwargs)
+    elif pattern_name == "quadtree_residual":
+        replace_qwen2vl_with_quadtree_residual_attn(**kwargs)
     elif pattern_name == "quadtree-abl-pos":
         replace_qwen2_with_quadtree_attn_for_abl_pos(**kwargs)
     elif pattern_name == "octree":
@@ -26,6 +31,7 @@ def replace_qwen2_by_sparse_attn(pattern_name, **kwargs):
         replace_qwen2_with_pyrd_attn(**kwargs)
     elif pattern_name == "quadtree_vis":
         replace_qwen2_with_quadtree_attn_for_vis(**kwargs)
+        replace_qwen2vl_with_quadtree_attn_for_vis(**kwargs)
     elif pattern_name == "tome":
         replace_qwen2_with_tome_attn(**kwargs)
         replace_qwen2vl_with_tome_attn(**kwargs)

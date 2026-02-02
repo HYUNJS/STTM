@@ -178,7 +178,8 @@ if __name__ == "__main__":
     # _video_feature = einops.rearrange(_video_feature, "t c h w -> t (h w) c")
     # _video_feature = einops.rearrange(_video_feature, "t c h w -> 1 (t h w) c")
     # x = tome_per_frame(_video_feature, merge_ratio_list=[0.25], snippet_size=1, n_head=16)
-    x, token_idx_final = tome_per_video(_video_feature, prune_ratio=0.80, n_head=1)
+    # x, token_idx_final = tome_per_video(_video_feature, prune_ratio=0.80, n_head=1)
+    x, token_idx_final = tome_per_video(_video_feature, prune_ratio=0.50, n_head=1)
     
     _video_feature
     
